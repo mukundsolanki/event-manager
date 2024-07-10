@@ -1,25 +1,27 @@
-import React, { useEffect, useRef, useState } from 'react';
-import QrScanner from 'qr-scanner';
-import axios from 'axios';
+import React, { useEffect, useRef, useState } from "react";
+import QrScanner from "qr-scanner";
+import axios from "axios";
 import { MdOutlineVerified } from "react-icons/md";
-import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
-import toast, { Toaster } from 'react-hot-toast';
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import toast, { Toaster } from "react-hot-toast";
 
 const Entry = () => {
-  const [qrData, setQrData] = useState('No result');
+  const [qrData, setQrData] = useState("No result");
   const [scanResult, setScanResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [scannerEnabled, setScannerEnabled] = useState(true);
   const videoRef = useRef(null);
   const qrScannerRef = useRef(null);
-
+  const [result, setResult] = useState(null);
   useEffect(() => {
     let isMounted = true;
 
     const requestCameraPermission = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment" },
+        });
         const videoElement = videoRef.current;
         if (!videoElement) return;
 
@@ -34,40 +36,43 @@ const Entry = () => {
               setScannerEnabled(false);
 
               try {
-                const response = await axios.get('http://localhost:5000/scan', { params: { value: result.data } });
+                const response = await axios.get("http://localhost:5000/scan", {
+                  params: { value: result.data, position: "entry" },
+                });
+                setResult({ value: result.data, position: "entry" });
                 setScanResult(response.data);
                 setLoading(false);
               } catch (error) {
-                console.error('Error sending QR data to backend:', error);
+                console.error("Error sending QR data to backend:", error);
                 setLoading(false);
               }
             }
           },
           {
             highlightScanRegion: true,
-            highlightCodeOutline: true,
+            highlightCodeOutline: false,
           }
         );
 
         qrScannerRef.current = qrScanner;
 
-        videoElement.addEventListener('loadedmetadata', () => {
+        videoElement.addEventListener("loadedmetadata", () => {
           videoElement.play().catch((error) => {
-            console.error('Error starting video playback:', error);
+            console.error("Error starting video playback:", error);
           });
 
           qrScanner.start().catch((error) => {
-            console.error('Error starting QR scanner:', error);
+            console.error("Error starting QR scanner:", error);
           });
         });
 
         return () => {
           isMounted = false;
           qrScanner.stop();
-          stream.getTracks().forEach(track => track.stop());
+          stream.getTracks().forEach((track) => track.stop());
         };
       } catch (error) {
-        console.error('Error accessing camera:', error);
+        console.error("Error accessing camera:", error);
       }
     };
 
@@ -80,45 +85,64 @@ const Entry = () => {
 
   const handleAccept = async () => {
     try {
-      await axios.post('http://localhost:5000/accept');
-      toast.success('Accepted successfully!');
-      console.log('Accepted sent to server');
+      const response = await axios.post(
+        "http://localhost:5000/accept",
+        result,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(response.data);
+      if (response.data === true) {
+        toast.success("Accepted successfully!");
+      } else {
+        toast.error("QR already used!");
+      }
+
+      console.log("Accepted sent to server");
       setScanResult(null);
       setLoading(true);
       setScannerEnabled(true);
     } catch (error) {
-      toast.error('Error sending accept request');
-      console.error('Error sending accept request:', error);
+      toast.error("Error sending accept request");
+      console.error("Error sending accept request:", error);
     }
   };
 
   const handleReject = async () => {
     try {
-      await axios.post('http://localhost:5000/reject');
+      await axios.post("http://localhost:5000/reject");
       toast.error("Rejected");
-      console.log('Rejected sent to server');
+      console.log("Rejected sent to server");
       setScanResult(null);
       setLoading(true);
       setScannerEnabled(true);
     } catch (error) {
-      toast.error('Error sending reject request');
-      console.error('Error sending reject request:', error);
+      toast.error("Error sending reject request");
+      console.error("Error sending reject request:", error);
     }
   };
 
   const videoContainerStyle = {
-    height: '50vh',
-    width: '100%',
+    height: "50vh",
+    width: "100%",
   };
 
   return (
     <div>
       <Toaster />
-      
-      
+
       <div className="flex flex-col items-center justify-center bg-gray-100">
         <div style={videoContainerStyle}>
-          <video ref={videoRef} style={{ width: '100%', height: '100%' }} autoPlay muted playsInline />
+          <video
+            ref={videoRef}
+            style={{ width: "100%", height: "100%" }}
+            autoPlay
+            muted
+            playsInline
+          />
         </div>
       </div>
 

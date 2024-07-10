@@ -9,11 +9,12 @@ app.use(bodyParser.json());
 
 app.get('/scan', (req, res) => {
   const scannedValue = req.query.value;
+  const position = req.query.position;
   const responseData = {
     name: 'Mukund Solanki',
     scannedValue: scannedValue,
   };
-  
+
   res.json(responseData);
 });
 
