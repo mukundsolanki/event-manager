@@ -30,11 +30,8 @@ async function run() {
 ////
 
 
-async function sendData() {
-    const data = {
-        name: 'John Doe',
-        slot: 1,
-    };
+async function sendData(name, slot, address, email, phone) {
+    const data = { name: name, slot: slot, address: address, email: email, phone: phone };
 
     try {
         const response = await axios.post('http://localhost:5000/create_new_user', data, {
@@ -49,4 +46,20 @@ async function sendData() {
     }
 }
 
-sendData();
+async function sendMail(email, name, slot) {
+    const data = { email: email, name: name, slot: slot };
+
+    try {
+        const response = await axios.post('http://localhost:5000/send_mail', data, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('Response from server:', response.data);
+    } catch (error) {
+        console.error('Error sending data:', error);
+    }
+}
+
+sendData("New Test", 2, "Dewas", "dakshkitukale03@gmail.com", "9669384428");
