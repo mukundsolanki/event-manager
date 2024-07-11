@@ -203,7 +203,7 @@ async function createUser(receivedData) {
     const formatedDate = moment().format('DD-MM-YYYY');
     const formatedTime = moment().format('HH:mm:ss');
     const key = nameKey + dateKey + timeKey;
-    const slot = receivedData.slot;
+    const slot = 2; //receivedData.slot;
     let checks = {};
     checks.entry = false;
     for (let i = 0; i < slot; i++) {

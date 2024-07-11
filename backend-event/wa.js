@@ -1,49 +1,29 @@
-const { Storage } = require("@google-cloud/storage");
-const qr = require('qr-image');
-const { Readable } = require('readable-stream')
-const storage = new Storage({
-    projectId: "newpro-403509",
-    keyFilename: ".\\cloudBucket.json",
-});
+const axios = require('axios');
 
-const uploadToFirebaseStorage = async (data, fileName) => {
-    try {
-        // Generate QR code buffer
-        const qrBuffer = qr.imageSync(data, { type: 'png' });
+const url = 'https://graph.facebook.com/v20.0/340743242463466/messages';
+const accessToken = 'EAAbL6WZAiKS4BOZBTsI1tLAoL5pSqc04mZAYakZCCE9m0WiwyPA2g0z265brgmgcPjZB7rblsra35xUzSvsD8fNmfnzEuygGAlnFbJ3ZCZC5drW151yc8raAyZCYjR8v5UJZCdDitTqOpTdNA1kLKqUqilNZCOavUz3ChxZAApQht7LHCkulXbyv5nQprwEY9q5EZAZCjXxlyRODouTaInZAFKBfAZD';
 
-        // Create a readable stream from the buffer
-        const stream = new Readable();
-        stream.push(qrBuffer);
-        stream.push(null); // Indicates the end of the stream
+const headers = {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json'
+};
 
-        const gcs = storage.bucket("stellarqr");
-        const storagePath = `storage_folder/${fileName}`;
-
-        const file = gcs.file(storagePath);
-
-        // Create a write stream to Firebase Storage
-        const writeStream = file.createWriteStream({
-            predefinedAcl: 'publicRead', // Set the file to be publicly readable
-            metadata: {
-                contentType: 'image/png', // Adjust the content type as needed
-            }
-        });
-
-        // Pipe the readable stream to the write stream
-        stream.pipe(writeStream);
-
-        // Return a promise that resolves when the upload is complete
-        await new Promise((resolve, reject) => {
-            writeStream.on('finish', resolve);
-            writeStream.on('error', reject);
-        });
-    } catch (error) {
-        console.log(error);
-        throw new Error(error.message);
+const data = {
+    messaging_product: 'whatsapp',
+    to: '919669384428',  // Replace with the recipient's WhatsApp number
+    type: 'template',
+    template: {
+        name: 'hello_world',
+        language: {
+            code: 'en_US'
+        }
     }
-}
-async function runQR(data, fileName) {
-    let result = await uploadToFirebaseStorage(data, fileName);
-    return result;
-}
-runQR("data", "name");
+};
+
+axios.post(url, data, { headers })
+    .then(response => {
+        console.log('Response:', response.data);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
