@@ -11,8 +11,10 @@ const qr = require('qr-image');
 const fs = require('fs');
 const { Storage } = require("@google-cloud/storage");
 const { Readable } = require('readable-stream')
-const eventDates = [10, 11, 12];
+const eventDates = [12, 13, 14];
 require('dotenv').config();
+const path = require("path");
+
 //This is MongoDB URI
 const uri = process.env.URI;
 //This is GC storage Bucket access code
@@ -342,6 +344,18 @@ async function createQR(data) {
 app.use(cors());
 app.use(bodyParser.json());
 
+
+app.use(express.static(path.resolve(__dirname, "root1/build/")));
+app.get("/", (req, res) => {
+  res.sendFile(join(__dirname, 'root1/build/index.html'));
+});
+
+// Serve the second app from a different route
+app.use(express.static(path.resolve(__dirname, 'root2/build/')));
+app.get("/app2", (req, res) => {
+  res.sendFile(path.join(__dirname, 'root2/build/index.html'));
+});
+
 app.post('/send_mail', async (req, res) => {
   const receivedData = req.body;
   console.log("email data received : ", receivedData);
@@ -379,6 +393,6 @@ app.post('/reject', (req, res) => {
   res.send('Rejected');
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+app.listen(5000, () => {
+  console.log(`Server is running on http://localhost:5000`);
 });
