@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    address: '',
-    email: '',
-    phone: '',
+    name: "",
+    address: "",
+    email: "",
+    phone: "",
   });
 
   const handleChange = (e) => {
@@ -18,17 +18,25 @@ const ContactForm = () => {
     e.preventDefault();
 
     try {
-      const response = await axios.post('http://localhost:5000/api/users', formData);
-      console.log('Form submitted:', response.data);
+      const response = await axios.post(
+        "http://localhost:5000/create_new_user",
+        formData
+      );
+      console.log("Form submitted:", response.data);
     } catch (error) {
-      console.error('Error submitting form', error);
+      console.error("Error submitting form", error);
     }
   };
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-white">
-      <form onSubmit={handleSubmit} className="w-full max-w-md bg-gray-200 p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6 text-center text-black">REGISTER</h2>
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md bg-gray-200 p-6 rounded-lg shadow-lg"
+      >
+        <h2 className="text-2xl font-bold mb-6 text-center text-black">
+          REGISTER
+        </h2>
         <div className="form-control mb-4">
           <label className="label" htmlFor="name">
             <span className="label-text text-black">Name</span>
@@ -90,10 +98,7 @@ const ContactForm = () => {
           />
         </div>
         <div className="flex items-center justify-between">
-          <button
-            type="submit"
-            className="btn btn-accent"
-          >
+          <button type="submit" className="btn btn-accent">
             Submit
           </button>
         </div>
