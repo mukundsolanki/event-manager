@@ -12,6 +12,8 @@ const fs = require('fs');
 const { Storage } = require("@google-cloud/storage");
 const { Readable } = require('readable-stream')
 const eventDates = [12, 13, 14];
+const Razorpay = require('razorpay');
+const crypto = require('crypto');
 require('dotenv').config();
 const path = require("path");
 
@@ -21,6 +23,11 @@ const uri = process.env.URI;
 const storage = new Storage({
   projectId: process.env.GC_PROJECT_ID,
   keyFilename: process.env.GC_KEYFILE_NAME,
+});
+//This is RazorPay connection code
+const razorpay = new Razorpay({
+  key_id: process.env.RP_ID,
+  key_secret: process.env.RP_SECRET,
 });
 const client = new MongoClient(String(uri));
 
@@ -344,16 +351,48 @@ async function createQR(data) {
 app.use(cors());
 app.use(bodyParser.json());
 
+const homeBuildPath = path.join(__dirname, '../frontend-event/build')
+const registerBuildPath = path.join(__dirname, '../registration-frontend/build')
 
-app.use(express.static(path.resolve(__dirname, "root1/build/")));
-app.get("/", (req, res) => {
-  res.sendFile(join(__dirname, 'root1/build/index.html'));
+app.use('/', express.static(homeBuildPath))
+app.get('/*', function (req, res) {
+  res.sendFile(homeBuildPath)
+})
+
+app.use('/register', express.static(registerBuildPath))
+app.get('/register', function (req, res) {
+  res.sendFile(registerBuildPath)
+})
+
+app.post('/orders', async (req, res) => {
+  const { amount } = req.body;
+
+  const options = {
+    amount: amount * 100,
+    currency: 'INR',
+    receipt: 'receipt_order_74394',
+  };
+
+  try {
+    const order = await razorpay.orders.create(options);
+    res.status(201).json(order);
+  } catch (error) {
+    res.status(500).json({ error: 'Something went wrong' });
+  }
 });
 
-// Serve the second app from a different route
-app.use(express.static(path.resolve(__dirname, 'root2/build/')));
-app.get("/app2", (req, res) => {
-  res.sendFile(path.join(__dirname, 'root2/build/index.html'));
+app.post('/verify', async (req, res) => {
+  const { orderCreationId, razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
+
+  const shasum = crypto.createHmac('sha256', 'NZcFST0SrzTBmNDC3pQg5nqA');
+  shasum.update(`${orderCreationId}|${razorpayPaymentId}`);
+  const digest = shasum.digest('hex');
+
+  if (digest === razorpaySignature) {
+    res.status(200).json({ success: true });
+  } else {
+    res.status(400).json({ success: false });
+  }
 });
 
 app.post('/send_mail', async (req, res) => {
@@ -365,7 +404,6 @@ app.post('/send_mail', async (req, res) => {
 
 app.get('/scan', async (req, res) => {
   const scannedValue = req.query.value;
-  const position = req.query.position;
   const nameGet = await getName(scannedValue);
   const responseData = {
     name: nameGet,
@@ -393,6 +431,6 @@ app.post('/reject', (req, res) => {
   res.send('Rejected');
 });
 
-app.listen(5000, () => {
+app.listen((process.env.PORT || 5000), () => {
   console.log(`Server is running on http://localhost:5000`);
 });

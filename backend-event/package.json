@@ -3,6 +3,7 @@
     "@google-cloud/storage": "^7.11.3",
     "axios": "^1.7.2",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "https": "^1.0.0",
@@ -14,7 +15,11 @@
     "qr-image": "^3.2.0",
     "qrcode": "^1.5.3",
     "querystring": "^0.2.1",
+    "razorpay": "^2.9.4",
     "readable-stream": "^4.5.2",
     "request": "^2.88.2"
+  },
+  "scripts": {
+    "start": "nodemon server.js"
   }
 }
