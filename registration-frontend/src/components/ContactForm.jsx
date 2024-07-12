@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const ContactForm = () => {
   const [formData, setFormData] = useState({
@@ -9,20 +10,83 @@ const ContactForm = () => {
     phone: '',
   });
 
+  const navigate = useNavigate();
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePayment = async () => {
+    const res = await loadRazorpayScript();
+
+    if (!res) {
+      alert('Razorpay SDK failed to load. Are you online?');
+      return;
+    }
+
+    const result = await axios.post('http://localhost:5000/api/payment/orders', {
+      amount: 10, // amount in rupees
+    });
+
+    if (!result) {
+      alert('Server error. Are you online?');
+      return;
+    }
+
+    const { amount, id: order_id, currency } = result.data;
+
+    const options = {
+      key: 'rzp_test_HSfViGruO1HmgB',
+      amount: amount.toString(),
+      currency: currency,
+      name: 'Your Company Name',
+      description: 'Test Transaction',
+      order_id: order_id,
+      handler: async function (response) {
+        const data = {
+          orderCreationId: order_id,
+          razorpayPaymentId: response.razorpay_payment_id,
+          razorpayOrderId: response.razorpay_order_id,
+          razorpaySignature: response.razorpay_signature,
+        };
+
+        const result = await axios.post('http://localhost:5000/api/payment/verify', data);
+
+        if (result.data.success) {
+          const userResponse = await axios.post('http://localhost:5000/api/users', formData);
+          navigate('/success', { state: { id: userResponse.data._id } });
+        } else {
+          alert('Payment verification failed. Please try again.');
+        }
+      },
+      prefill: {
+        name: formData.name,
+        email: formData.email,
+        contact: formData.phone,
+      },
+      theme: {
+        color: '#61dafb',
+      },
+    };
+
+    const paymentObject = new window.Razorpay(options);
+    paymentObject.open();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    try {
-      const response = await axios.post('http://localhost:5000/api/users', formData);
-      console.log('Form submitted:', response.data);
-    } catch (error) {
-      console.error('Error submitting form', error);
-    }
+    await handlePayment();
   };
 
   return (

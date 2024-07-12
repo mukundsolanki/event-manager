@@ -1,12 +1,17 @@
 import React from 'react';
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import ContactForm from './components/ContactForm';
+import Success from './components/Success';
 
-function App() {
+const App = () => {
   return (
-    <div className="App">
-      <ContactForm />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<ContactForm />} />
+        <Route path="/success" element={<Success />} />
+      </Routes>
+    </Router>
   );
-}
+};
 
 export default App;
